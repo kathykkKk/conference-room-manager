@@ -1,0 +1,61 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bp_app
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - .:/var/www/html
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - bp_network
+    environment:
+      - APP_ENV=local
+      - APP_DEBUG=true
+      - DB_CONNECTION=pgsql
+      - DB_HOST=postgres  # <--- Убедитесь, что здесь postgres
+      - DB_PORT=5432
+      - DB_DATABASE=business_park
+      - DB_USERNAME=sail
+      - DB_PASSWORD=password
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: bp_postgres
+    environment:
+      POSTGRES_DB: business_park
+      POSTGRES_USER: sail
+      POSTGRES_PASSWORD: password
+    volumes:
+      - bp_pg:/var/lib/postgresql/data
+    networks:
+      - bp_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sail -d business_park"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: bp_frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - app
+    networks:
+      - bp_network
+
+networks:
+  bp_network:
+    driver: bridge
+
+volumes:
+  bp_pg:

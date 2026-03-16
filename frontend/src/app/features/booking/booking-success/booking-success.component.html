@@ -1,0 +1,52 @@
+<div class="success-page">
+  <div class="success-container">
+    <mat-card class="success-card">
+      <mat-card-content>
+        <div class="success-icon">
+          <mat-icon>check_circle</mat-icon>
+        </div>
+
+        <h1 class="success-title">Бронирование оформлено!</h1>
+
+        <p class="success-message">
+          Ваше бронирование успешно создано и ожидает подтверждения менеджером.
+        </p>
+
+        @if (bookingId) {
+          <div class="booking-id-block">
+            <div class="booking-id-label">Номер бронирования:</div>
+            <div class="booking-id-value">{{ bookingId }}</div>
+          </div>
+        }
+
+        <mat-divider></mat-divider>
+
+        <div class="info-block">
+          <div class="info-item">
+            <mat-icon>email</mat-icon>
+            <span>Подтверждение будет отправлено на указанный вами email</span>
+          </div>
+          <div class="info-item">
+            <mat-icon>schedule</mat-icon>
+            <span>Менеджер свяжется с вами в течение рабочего дня</span>
+          </div>
+          <div class="info-item">
+            <mat-icon>payment</mat-icon>
+            <span>Оплата производится после подтверждения бронирования</span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <a mat-raised-button color="primary" routerLink="/">
+            <mat-icon>search</mat-icon>
+            Найти другой зал
+          </a>
+          <a mat-stroked-button routerLink="/">
+            <mat-icon>home</mat-icon>
+            На главную
+          </a>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  </div>
+</div>

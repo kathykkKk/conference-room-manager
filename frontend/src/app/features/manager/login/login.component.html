@@ -1,0 +1,64 @@
+<div class="login-page">
+  <mat-card class="login-card">
+    <mat-card-header>
+      <div class="login-header">
+        <mat-icon class="login-icon">manage_accounts</mat-icon>
+        <mat-card-title>Вход для менеджеров</mat-card-title>
+        <mat-card-subtitle>Конференц-залы — Панель управления</mat-card-subtitle>
+      </div>
+    </mat-card-header>
+
+    <mat-card-content>
+      @if (error) {
+        <div class="error-banner">
+          <mat-icon>error</mat-icon>
+          <span>{{ error }}</span>
+        </div>
+      }
+
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Email</mat-label>
+          <input matInput type="email" formControlName="email"
+                 placeholder="manager@example.com" autocomplete="email">
+          <mat-icon matSuffix>email</mat-icon>
+          @if (loginForm.get('email')?.hasError('required') && loginForm.get('email')?.touched) {
+            <mat-error>Введите email</mat-error>
+          }
+          @if (loginForm.get('email')?.hasError('email') && loginForm.get('email')?.touched) {
+            <mat-error>Некорректный email</mat-error>
+          }
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="full-width">
+          <mat-label>Пароль</mat-label>
+          <input matInput [type]="hidePassword ? 'password' : 'text'"
+                 formControlName="password" autocomplete="current-password">
+          <button mat-icon-button matSuffix type="button"
+                  (click)="hidePassword = !hidePassword">
+            <mat-icon>{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+          </button>
+          @if (loginForm.get('password')?.hasError('required') && loginForm.get('password')?.touched) {
+            <mat-error>Введите пароль</mat-error>
+          }
+          @if (loginForm.get('password')?.hasError('minlength') && loginForm.get('password')?.touched) {
+            <mat-error>Минимум 6 символов</mat-error>
+          }
+        </mat-form-field>
+
+        <button mat-raised-button color="primary" type="submit"
+                class="login-button" [disabled]="isLoading">
+          <mat-icon>{{ isLoading ? 'hourglass_empty' : 'login' }}</mat-icon>
+          {{ isLoading ? 'Входим...' : 'Войти' }}
+        </button>
+      </form>
+    </mat-card-content>
+
+    <mat-card-actions class="back-actions">
+      <a mat-button routerLink="/">
+        <mat-icon>arrow_back</mat-icon>
+        Вернуться на сайт
+      </a>
+    </mat-card-actions>
+  </mat-card>
+</div>
