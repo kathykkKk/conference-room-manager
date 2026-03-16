@@ -1,0 +1,225 @@
+@if (isLoading) {
+  <app-loading-spinner></app-loading-spinner>
+} @else if (error) {
+  <div class="page-container">
+    <app-error-message [message]="error"></app-error-message>
+    <a mat-button routerLink="/">
+      <mat-icon>arrow_back</mat-icon>
+      Вернуться к списку
+    </a>
+  </div>
+} @else if (hall) {
+  <div class="hall-detail-page">
+    <div class="page-container">
+      <!-- Навигация -->
+      <div class="breadcrumb">
+        <a mat-button routerLink="/" class="back-link">
+          <mat-icon>arrow_back</mat-icon>
+          К списку залов
+        </a>
+      </div>
+
+      <div class="hall-layout">
+        <!-- Левая колонка: фото и информация -->
+        <div class="hall-main">
+          <!-- Фотографии -->
+          <mat-card class="photo-card">
+            @if (hasPhotos()) {
+              <div class="photo-carousel">
+                <img [src]="getCurrentPhoto()" [alt]="hall.name" class="main-photo">
+                @if (hall.photos && hall.photos.length > 1) {
+                  <div class="photo-controls">
+                    <button mat-icon-button (click)="prevPhoto()" [disabled]="currentPhotoIndex === 0">
+                      <mat-icon>chevron_left</mat-icon>
+                    </button>
+                    <span class="photo-counter">{{ currentPhotoIndex + 1 }} / {{ hall.photos.length }}</span>
+                    <button mat-icon-button (click)="nextPhoto()" [disabled]="currentPhotoIndex === hall.photos.length - 1">
+                      <mat-icon>chevron_right</mat-icon>
+                    </button>
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="photo-placeholder">
+                <mat-icon>meeting_room</mat-icon>
+                <span>Фотографии отсутствуют</span>
+              </div>
+            }
+          </mat-card>
+
+          <!-- Основная информация -->
+          <mat-card class="info-card">
+            <mat-card-content>
+              <div class="hall-title-row">
+                <h1 class="hall-name">{{ hall.name }}</h1>
+                <span class="status-badge" [class]="hall.status">
+                  {{ getStatusLabel(hall.status) }}
+                </span>
+              </div>
+
+              @if (hall.business_park) {
+                <div class="location-info">
+                  <mat-icon>location_on</mat-icon>
+                  <div>
+                    <div class="park-name">{{ hall.business_park.name }}</div>
+                    <div class="park-address">{{ hall.business_park.address }}, {{ hall.business_park.city }}</div>
+                  </div>
+                </div>
+              }
+
+              <mat-divider></mat-divider>
+
+              <div class="specs-grid">
+                <div class="spec-item">
+                  <mat-icon>people</mat-icon>
+                  <div>
+                    <div class="spec-value">{{ hall.capacity }}</div>
+                    <div class="spec-label">человек</div>
+                  </div>
+                </div>
+                <div class="spec-item">
+                  <mat-icon>square_foot</mat-icon>
+                  <div>
+                    <div class="spec-value">{{ hall.area_sq_m }}</div>
+                    <div class="spec-label">кв. метров</div>
+                  </div>
+                </div>
+                @if (hall.price_per_hour) {
+                  <div class="spec-item">
+                    <mat-icon>payments</mat-icon>
+                    <div>
+                      <div class="spec-value price">
+                        {{ hall.price_per_hour | currency:'RUB':'symbol':'1.0-0':'ru-RU' }}
+                      </div>
+                      <div class="spec-label">в час</div>
+                    </div>
+                  </div>
+                }
+              </div>
+
+              @if (hall.description) {
+                <mat-divider></mat-divider>
+                <div class="description">
+                  <h3>Описание</h3>
+                  <p>{{ hall.description }}</p>
+                </div>
+              }
+            </mat-card-content>
+          </mat-card>
+
+          <!-- Оборудование -->
+          @if (hall.equipment && hall.equipment.length > 0) {
+            <mat-card class="equipment-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>devices</mat-icon>
+                  Оборудование
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <table mat-table [dataSource]="hall.equipment" class="equipment-table">
+                  <ng-container matColumnDef="name">
+                    <th mat-header-cell *matHeaderCellDef>Наименование</th>
+                    <td mat-cell *matCellDef="let eq">{{ eq.name || '—' }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="category">
+                    <th mat-header-cell *matHeaderCellDef>Категория</th>
+                    <td mat-cell *matCellDef="let eq">{{ eq.category || '—' }}</td>
+                  </ng-container>
+                  <ng-container matColumnDef="quantity">
+                    <th mat-header-cell *matHeaderCellDef>Количество</th>
+                    <td mat-cell *matCellDef="let eq">{{ eq.pivot?.quantity ?? eq.quantity }}</td>
+                  </ng-container>
+                  <tr mat-header-row *matHeaderRowDef="equipmentColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: equipmentColumns;"></tr>
+                </table>
+              </mat-card-content>
+            </mat-card>
+          }
+        </div>
+
+        <!-- Правая колонка: форма бронирования -->
+        <div class="hall-sidebar">
+          <mat-card class="booking-card" [class.sticky-card]="true">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>event_available</mat-icon>
+                Забронировать
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              @if (hall.price_per_hour) {
+                <div class="price-display">
+                  <span class="price-value">
+                    {{ hall.price_per_hour | currency:'RUB':'symbol':'1.0-0':'ru-RU' }}
+                  </span>
+                  <span class="price-unit">/ час</span>
+                </div>
+              }
+
+              <form [formGroup]="bookingForm" (ngSubmit)="onBook()" class="booking-form">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Дата</mat-label>
+                  <input matInput [matDatepicker]="bookingDate" formControlName="date"
+                         placeholder="дд.мм.гггг" [min]="minDate">
+                  <mat-datepicker-toggle matIconSuffix [for]="bookingDate"></mat-datepicker-toggle>
+                  <mat-datepicker #bookingDate></mat-datepicker>
+                  @if (bookingForm.get('date')?.hasError('required') && bookingForm.get('date')?.touched) {
+                    <mat-error>Выберите дату</mat-error>
+                  }
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Начало</mat-label>
+                  <mat-select formControlName="start_time">
+                    <mat-option value="">Выберите время</mat-option>
+                    @for (time of timeOptions; track time) {
+                      <mat-option [value]="time">{{ time }}</mat-option>
+                    }
+                  </mat-select>
+                  @if (bookingForm.get('start_time')?.hasError('required') && bookingForm.get('start_time')?.touched) {
+                    <mat-error>Выберите время начала</mat-error>
+                  }
+                </mat-form-field>
+
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Конец</mat-label>
+                  <mat-select formControlName="end_time">
+                    <mat-option value="">Выберите время</mat-option>
+                    @for (time of timeOptions; track time) {
+                      <mat-option [value]="time">{{ time }}</mat-option>
+                    }
+                  </mat-select>
+                  @if (bookingForm.get('end_time')?.hasError('required') && bookingForm.get('end_time')?.touched) {
+                    <mat-error>Выберите время окончания</mat-error>
+                  }
+                </mat-form-field>
+
+                @if (calculatedPrice !== null) {
+                  <div class="price-calculation">
+                    <mat-divider></mat-divider>
+                    <div class="total-price">
+                      <span>Итого:</span>
+                      <strong>{{ calculatedPrice | currency:'RUB':'symbol':'1.2-2':'ru-RU' }}</strong>
+                    </div>
+                  </div>
+                }
+
+                <button mat-raised-button color="primary" type="submit"
+                        class="book-button"
+                        [disabled]="hall.status === 'unavailable'">
+                  <mat-icon>event_available</mat-icon>
+                  @if (hall.status === 'unavailable') {
+                    Зал недоступен
+                  } @else {
+                    Перейти к бронированию
+                  }
+                </button>
+              </form>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    </div>
+  </div>
+}

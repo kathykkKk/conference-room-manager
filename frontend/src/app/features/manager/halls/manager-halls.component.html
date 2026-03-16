@@ -1,0 +1,124 @@
+<div class="page-container">
+  <div class="page-header">
+    <h1>Залы</h1>
+    <div class="header-actions">
+      <button mat-button (click)="loadHalls()" [disabled]="isLoading">
+        <mat-icon>refresh</mat-icon>
+        Обновить
+      </button>
+      <a mat-raised-button color="primary" routerLink="/manager/halls/new">
+        <mat-icon>add</mat-icon>
+        Добавить зал
+      </a>
+    </div>
+  </div>
+
+  @if (isLoading) {
+    <app-loading-spinner></app-loading-spinner>
+  } @else if (error) {
+    <app-error-message [message]="error"></app-error-message>
+  } @else if (halls.length === 0) {
+    <mat-card>
+      <mat-card-content>
+        <div class="empty-state">
+          <mat-icon>meeting_room</mat-icon>
+          <h3>Залы не добавлены</h3>
+          <p>Нажмите «Добавить зал» для создания первого зала</p>
+          <a mat-raised-button color="primary" routerLink="/manager/halls/new">
+            <mat-icon>add</mat-icon>
+            Добавить зал
+          </a>
+        </div>
+      </mat-card-content>
+    </mat-card>
+  } @else {
+    <mat-card class="table-card">
+      <div class="table-container">
+        <table mat-table [dataSource]="halls" class="halls-table">
+
+          <!-- Название -->
+          <ng-container matColumnDef="name">
+            <th mat-header-cell *matHeaderCellDef>Название</th>
+            <td mat-cell *matCellDef="let hall">
+              <div class="hall-name">{{ hall.name }}</div>
+            </td>
+          </ng-container>
+
+          <!-- Бизнес-парк -->
+          <ng-container matColumnDef="business_park">
+            <th mat-header-cell *matHeaderCellDef>Бизнес-парк</th>
+            <td mat-cell *matCellDef="let hall">
+              @if (hall.business_park) {
+                <div>{{ hall.business_park.name }}</div>
+                <div class="sub-text">{{ hall.business_park.city }}</div>
+              } @else {
+                —
+              }
+            </td>
+          </ng-container>
+
+          <!-- Вместимость -->
+          <ng-container matColumnDef="capacity">
+            <th mat-header-cell *matHeaderCellDef>Вместимость</th>
+            <td mat-cell *matCellDef="let hall">{{ hall.capacity }} чел.</td>
+          </ng-container>
+
+          <!-- Площадь -->
+          <ng-container matColumnDef="area">
+            <th mat-header-cell *matHeaderCellDef>Площадь</th>
+            <td mat-cell *matCellDef="let hall">{{ hall.area_sq_m }} м²</td>
+          </ng-container>
+
+          <!-- Цена -->
+          <ng-container matColumnDef="price">
+            <th mat-header-cell *matHeaderCellDef>Цена/час</th>
+            <td mat-cell *matCellDef="let hall">
+              @if (hall.price_per_hour) {
+                {{ hall.price_per_hour | number:'1.0-0':'ru-RU' }} ₽
+              } @else {
+                —
+              }
+            </td>
+          </ng-container>
+
+          <!-- Статус -->
+          <ng-container matColumnDef="status">
+            <th mat-header-cell *matHeaderCellDef>Статус</th>
+            <td mat-cell *matCellDef="let hall">
+              <span class="status-badge" [class]="hall.status">
+                {{ getStatusLabel(hall.status) }}
+              </span>
+            </td>
+          </ng-container>
+
+          <!-- Действия -->
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell *matHeaderCellDef>Действия</th>
+            <td mat-cell *matCellDef="let hall">
+              <div class="action-buttons">
+                <a mat-icon-button color="primary"
+                   [routerLink]="['/manager/halls', hall.id, 'edit']"
+                   matTooltip="Редактировать">
+                  <mat-icon>edit</mat-icon>
+                </a>
+                <button mat-icon-button color="warn"
+                        (click)="deactivateHall(hall)"
+                        [disabled]="actionInProgress === hall.id"
+                        matTooltip="Деактивировать">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        </table>
+      </div>
+
+      <div class="table-footer">
+        Всего залов: {{ halls.length }}
+      </div>
+    </mat-card>
+  }
+</div>

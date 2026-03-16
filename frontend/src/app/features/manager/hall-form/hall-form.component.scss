@@ -1,0 +1,81 @@
+.page-container {
+  padding: 24px;
+  max-width: 900px;
+}
+
+.breadcrumb {
+  margin-bottom: 16px;
+
+  .back-link {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #1565c0;
+  }
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 500;
+  margin: 0 0 24px;
+  color: #212121;
+}
+
+.form-card {
+  border-radius: 8px !important;
+}
+
+.hall-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #424242;
+  margin: 8px 0 4px;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.half-width {
+  width: 50%;
+
+  @media (max-width: 600px) {
+    width: 100%;
+  }
+}
+
+.form-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.form-field {
+  flex: 1;
+  min-width: 160px;
+}
+
+mat-divider {
+  margin: 12px 0 !important;
+}
+
+.form-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 8px;
+
+  button, a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 44px;
+    padding: 0 24px;
+  }
+}

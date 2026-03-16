@@ -1,0 +1,44 @@
+<mat-sidenav-container class="sidenav-container">
+  <mat-sidenav mode="side" opened class="sidenav">
+    <div class="sidenav-header">
+      <mat-icon>business</mat-icon>
+      <span>Управление</span>
+    </div>
+
+    <mat-nav-list>
+      <a mat-list-item routerLink="/manager/bookings" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>book_online</mat-icon>
+        <span matListItemTitle>Бронирования</span>
+      </a>
+      <a mat-list-item routerLink="/manager/halls" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>meeting_room</mat-icon>
+        <span matListItemTitle>Залы</span>
+      </a>
+      <a mat-list-item routerLink="/manager/reports" routerLinkActive="active-link">
+        <mat-icon matListItemIcon>bar_chart</mat-icon>
+        <span matListItemTitle>Отчёты</span>
+      </a>
+    </mat-nav-list>
+
+    <div class="sidenav-footer">
+      <a mat-list-item class="public-link" (click)="goToSite()">
+        <mat-icon matListItemIcon>home</mat-icon>
+        <span matListItemTitle>На сайт</span>
+      </a>
+    </div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="content-area">
+    <mat-toolbar color="primary" class="manager-toolbar">
+      <span class="toolbar-title">Панель управления</span>
+      <span class="toolbar-spacer"></span>
+      <button mat-icon-button (click)="logout()" title="Выйти">
+        <mat-icon>logout</mat-icon>
+      </button>
+    </mat-toolbar>
+
+    <div class="manager-content">
+      <router-outlet></router-outlet>
+    </div>
+  </mat-sidenav-content>
+</mat-sidenav-container>
