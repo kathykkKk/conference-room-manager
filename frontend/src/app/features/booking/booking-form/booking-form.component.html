@@ -1,0 +1,188 @@
+<div class="booking-form-page">
+  <div class="page-container">
+    <div class="breadcrumb">
+      <a mat-button routerLink="/" class="back-link">
+        <mat-icon>arrow_back</mat-icon>
+        К списку залов
+      </a>
+    </div>
+
+    <h1 class="page-title">Оформление бронирования</h1>
+
+    @if (isLoading) {
+      <app-loading-spinner></app-loading-spinner>
+    } @else if (error) {
+      <app-error-message [message]="error"></app-error-message>
+    } @else {
+      <div class="booking-layout">
+        <!-- Форма клиента -->
+        <mat-card class="client-form-card">
+          <mat-card-header>
+            <mat-card-title>
+              <mat-icon>person</mat-icon>
+              Данные клиента
+            </mat-card-title>
+          </mat-card-header>
+          <mat-card-content>
+            <form [formGroup]="bookingForm" (ngSubmit)="onSubmit()" class="form-content">
+              <!-- Тип клиента -->
+              <div class="form-group">
+                <label class="form-label">Тип клиента</label>
+                <mat-radio-group formControlName="client_type" class="radio-group">
+                  <mat-radio-button value="individual">Физическое лицо</mat-radio-button>
+                  <mat-radio-button value="company">Юридическое лицо</mat-radio-button>
+                </mat-radio-group>
+              </div>
+
+              <mat-divider></mat-divider>
+
+              <!-- ФИО -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>{{ isCompany ? 'ФИО представителя' : 'ФИО' }}</mat-label>
+                <input matInput formControlName="full_name" placeholder="Иванов Иван Иванович">
+                <mat-icon matSuffix>person</mat-icon>
+                @if (bookingForm.get('full_name')?.hasError('required') && bookingForm.get('full_name')?.touched) {
+                  <mat-error>Введите ФИО</mat-error>
+                }
+                @if (bookingForm.get('full_name')?.hasError('minlength') && bookingForm.get('full_name')?.touched) {
+                  <mat-error>Минимум 2 символа</mat-error>
+                }
+              </mat-form-field>
+
+              <!-- Email -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Email</mat-label>
+                <input matInput type="email" formControlName="email" placeholder="ivan@example.com">
+                <mat-icon matSuffix>email</mat-icon>
+                @if (bookingForm.get('email')?.hasError('required') && bookingForm.get('email')?.touched) {
+                  <mat-error>Введите email</mat-error>
+                }
+                @if (bookingForm.get('email')?.hasError('email') && bookingForm.get('email')?.touched) {
+                  <mat-error>Некорректный email</mat-error>
+                }
+              </mat-form-field>
+
+              <!-- Телефон -->
+              <mat-form-field appearance="outline" class="full-width">
+                <mat-label>Телефон</mat-label>
+                <input matInput formControlName="phone" placeholder="+7 (999) 123-45-67">
+                <mat-icon matSuffix>phone</mat-icon>
+                @if (bookingForm.get('phone')?.hasError('required') && bookingForm.get('phone')?.touched) {
+                  <mat-error>Введите телефон</mat-error>
+                }
+                @if (bookingForm.get('phone')?.hasError('pattern') && bookingForm.get('phone')?.touched) {
+                  <mat-error>Некорректный номер телефона</mat-error>
+                }
+              </mat-form-field>
+
+              <!-- Название компании (только для юр. лиц) -->
+              @if (isCompany) {
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Название компании</mat-label>
+                  <input matInput formControlName="company_name" placeholder='ООО "Ромашка"'>
+                  <mat-icon matSuffix>business</mat-icon>
+                  @if (bookingForm.get('company_name')?.hasError('required') && bookingForm.get('company_name')?.touched) {
+                    <mat-error>Введите название компании</mat-error>
+                  }
+                </mat-form-field>
+              }
+
+              <div class="form-actions">
+                <button mat-raised-button color="primary" type="submit"
+                        class="submit-button"
+                        [disabled]="isSubmitting">
+                  <mat-icon>{{ isSubmitting ? 'hourglass_empty' : 'check_circle' }}</mat-icon>
+                  {{ isSubmitting ? 'Оформляем...' : 'Подтвердить бронирование' }}
+                </button>
+              </div>
+            </form>
+          </mat-card-content>
+        </mat-card>
+
+        <!-- Сводка бронирования -->
+        <div class="booking-summary">
+          @if (hall) {
+            <mat-card class="summary-card">
+              <mat-card-header>
+                <mat-card-title>
+                  <mat-icon>event_note</mat-icon>
+                  Детали бронирования
+                </mat-card-title>
+              </mat-card-header>
+              <mat-card-content>
+                <div class="summary-hall-name">{{ hall.name }}</div>
+
+                @if (hall.business_park) {
+                  <div class="summary-location">
+                    <mat-icon>location_on</mat-icon>
+                    {{ hall.business_park.name }}, {{ hall.business_park.city }}
+                  </div>
+                }
+
+                <mat-divider></mat-divider>
+
+                <div class="summary-dates">
+                  <div class="summary-row">
+                    <span class="summary-label">
+                      <mat-icon>event</mat-icon>
+                      Начало:
+                    </span>
+                    <span class="summary-value">{{ startDatetime | date:'dd.MM.yyyy HH:mm':'':'ru-RU' }}</span>
+                  </div>
+                  <div class="summary-row">
+                    <span class="summary-label">
+                      <mat-icon>event</mat-icon>
+                      Конец:
+                    </span>
+                    <span class="summary-value">{{ endDatetime | date:'dd.MM.yyyy HH:mm':'':'ru-RU' }}</span>
+                  </div>
+                  <div class="summary-row">
+                    <span class="summary-label">
+                      <mat-icon>schedule</mat-icon>
+                      Длительность:
+                    </span>
+                    <span class="summary-value">{{ getDurationHours() }} ч.</span>
+                  </div>
+                </div>
+
+                @if (calculatedPrice !== null) {
+                  <mat-divider></mat-divider>
+                  <div class="summary-total">
+                    <span>Итого к оплате:</span>
+                    <strong class="total-amount">
+                      {{ calculatedPrice | currency:'RUB':'symbol':'1.2-2':'ru-RU' }}
+                    </strong>
+                  </div>
+                }
+
+                <div class="summary-specs">
+                  <div class="spec-chip">
+                    <mat-icon>people</mat-icon>
+                    {{ hall.capacity }} чел.
+                  </div>
+                  <div class="spec-chip">
+                    <mat-icon>square_foot</mat-icon>
+                    {{ hall.area_sq_m }} м²
+                  </div>
+                </div>
+              </mat-card-content>
+            </mat-card>
+          }
+
+          <mat-card class="info-card">
+            <mat-card-content>
+              <div class="info-row">
+                <mat-icon>info</mat-icon>
+                <p>После оформления бронирования вы получите подтверждение на указанный email.</p>
+              </div>
+              <div class="info-row">
+                <mat-icon>payment</mat-icon>
+                <p>Оплата производится менеджером по результатам подтверждения бронирования.</p>
+              </div>
+            </mat-card-content>
+          </mat-card>
+        </div>
+      </div>
+    }
+  </div>
+</div>

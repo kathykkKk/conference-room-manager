@@ -1,0 +1,177 @@
+<div class="halls-list-page">
+  <!-- Фильтры поиска -->
+  <mat-expansion-panel class="search-panel" [expanded]="true">
+    <mat-expansion-panel-header>
+      <mat-panel-title>
+        <mat-icon>search</mat-icon>
+        Поиск залов
+      </mat-panel-title>
+    </mat-expansion-panel-header>
+
+    <form [formGroup]="searchForm" (ngSubmit)="onSearch()" class="search-form">
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Дата</mat-label>
+          <input matInput [matDatepicker]="datePicker" formControlName="date" placeholder="дд.мм.гггг">
+          <mat-datepicker-toggle matIconSuffix [for]="datePicker"></mat-datepicker-toggle>
+          <mat-datepicker #datePicker></mat-datepicker>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Начало</mat-label>
+          <mat-select formControlName="start_time">
+            <mat-option value="">—</mat-option>
+            @for (time of timeOptions; track time) {
+              <mat-option [value]="time">{{ time }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Конец</mat-label>
+          <mat-select formControlName="end_time">
+            <mat-option value="">—</mat-option>
+            @for (time of timeOptions; track time) {
+              <mat-option [value]="time">{{ time }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Бизнес-парк</mat-label>
+          <mat-select formControlName="business_park_id">
+            <mat-option value="">Все</mat-option>
+            @for (park of filtersData?.business_parks; track park.id) {
+              <mat-option [value]="park.id">{{ park.name }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field">
+          <mat-label>Город</mat-label>
+          <input matInput formControlName="city" placeholder="Москва">
+          <mat-icon matSuffix>location_city</mat-icon>
+        </mat-form-field>
+      </div>
+
+      <div class="form-row">
+        <mat-form-field appearance="outline" class="form-field form-field-sm">
+          <mat-label>Вместимость от</mat-label>
+          <input matInput type="number" formControlName="capacity_from" min="1" placeholder="10">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field form-field-sm">
+          <mat-label>Вместимость до</mat-label>
+          <input matInput type="number" formControlName="capacity_to" min="1" placeholder="100">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field form-field-sm">
+          <mat-label>Цена от, ₽/ч</mat-label>
+          <input matInput type="number" formControlName="min_price" min="0" placeholder="1000">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field form-field-sm">
+          <mat-label>Цена до, ₽/ч</mat-label>
+          <input matInput type="number" formControlName="max_price" min="0" placeholder="10000">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline" class="form-field form-field-lg">
+          <mat-label>Оборудование (категории)</mat-label>
+          <mat-select formControlName="equipment" multiple>
+            @for (cat of filtersData?.equipment_categories; track cat) {
+              <mat-option [value]="cat">{{ cat }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+      </div>
+
+      <div class="search-actions">
+        <button mat-raised-button color="primary" type="submit">
+          <mat-icon>search</mat-icon>
+          Найти
+        </button>
+        <button mat-button type="button" (click)="onReset()">
+          <mat-icon>clear</mat-icon>
+          Сбросить
+        </button>
+      </div>
+    </form>
+  </mat-expansion-panel>
+
+  <!-- Результаты -->
+  <div class="results-section">
+    <div class="results-header">
+      <h2 class="results-title">
+        @if (!isLoading) {
+          Найдено залов: {{ halls.length }}
+        }
+      </h2>
+    </div>
+
+    @if (isLoading) {
+      <app-loading-spinner></app-loading-spinner>
+    } @else if (error) {
+      <app-error-message [message]="error"></app-error-message>
+    } @else if (halls.length === 0) {
+      <div class="empty-state">
+        <mat-icon>meeting_room</mat-icon>
+        <h3>Залы не найдены</h3>
+        <p>Попробуйте изменить параметры поиска</p>
+      </div>
+    } @else {
+      <div class="halls-grid">
+        @for (hall of halls; track hall.id) {
+          <mat-card class="hall-card">
+            <div class="hall-photo">
+              @if (hasPhoto(hall)) {
+                <img [src]="getHallPhoto(hall)" [alt]="hall.name" class="photo-img">
+              } @else {
+                <div class="photo-placeholder">
+                  <mat-icon>meeting_room</mat-icon>
+                </div>
+              }
+              <span class="status-badge" [class]="hall.status">
+                {{ getStatusLabel(hall.status) }}
+              </span>
+            </div>
+
+            <mat-card-content class="hall-content">
+              <h3 class="hall-name">{{ hall.name }}</h3>
+
+              @if (hall.business_park) {
+                <p class="hall-location">
+                  <mat-icon>location_on</mat-icon>
+                  {{ hall.business_park.name }}, {{ hall.business_park.city }}
+                </p>
+              }
+
+              <div class="hall-specs">
+                <span class="spec-item">
+                  <mat-icon>people</mat-icon>
+                  {{ hall.capacity }} чел.
+                </span>
+                <span class="spec-item">
+                  <mat-icon>square_foot</mat-icon>
+                  {{ hall.area_sq_m }} м²
+                </span>
+                @if (hall.current_price) {
+                  <span class="spec-item price">
+                    <mat-icon>payments</mat-icon>
+                    {{ hall.current_price | currency:'RUB':'symbol':'1.0-0':'ru-RU' }}/ч
+                  </span>
+                }
+              </div>
+            </mat-card-content>
+
+            <mat-card-actions class="hall-actions">
+              <a mat-raised-button color="primary" [routerLink]="['/halls', hall.id]">
+                <mat-icon>info</mat-icon>
+                Подробнее
+              </a>
+            </mat-card-actions>
+          </mat-card>
+        }
+      </div>
+    }
+  </div>
+</div>

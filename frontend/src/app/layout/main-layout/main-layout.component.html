@@ -1,0 +1,21 @@
+<div class="layout-container">
+  <mat-toolbar color="primary" class="main-toolbar">
+    <a routerLink="/" class="logo-link">
+      <mat-icon>business</mat-icon>
+      <span class="logo-text">Конференц-залы</span>
+    </a>
+    <span class="toolbar-spacer"></span>
+    <a mat-button routerLink="/manager/login" class="login-button">
+      <mat-icon>manage_accounts</mat-icon>
+      Войти
+    </a>
+  </mat-toolbar>
+
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+
+  <footer class="main-footer">
+    <p>© {{ currentYear }} Конференц-залы. Все права защищены.</p>
+  </footer>
+</div>

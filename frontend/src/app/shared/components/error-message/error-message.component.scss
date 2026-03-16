@@ -1,0 +1,19 @@
+.error-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  color: #f44336;
+  background-color: #ffebee;
+  border-radius: 4px;
+  margin: 16px 0;
+}
+
+.error-icon {
+  color: #f44336;
+  flex-shrink: 0;
+}
+
+.error-text {
+  font-size: 14px;
+}
