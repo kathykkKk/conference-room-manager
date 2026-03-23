@@ -4,54 +4,101 @@ namespace App\Http\Controllers\Api\Manager;
 
 use App\Http\Controllers\Controller;
 use App\Models\Booking;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 
 class ReportController extends Controller
 {
-    public function incomeReport(Request $request)
+    /**
+     * Отчёт по завершённым бронированиям за период (по дате начала брони в TZ приложения).
+     */
+    public function incomeReport(Request $request): JsonResponse
     {
-        $manager = $request->user();
-        
-        // Параметры периода
-        $dateFrom = $request->get('date_from', now()->startOfMonth());
-        $dateTo = $request->get('date_to', now()->endOfMonth());
+        $validated = $request->validate([
+            'date_from' => 'required|date',
+            'date_to' => 'required|date|after_or_equal:date_from',
+        ]);
 
-        $report = Booking::join('halls', 'bookings.hall_id', '=', 'halls.id')
-            ->where('halls.business_park_id', $manager->business_park_id) // Фильтр по парку менеджера
-            ->whereBetween('bookings.created_at', [$dateFrom, $dateTo])
-            ->select(
-                DB::raw("TO_CHAR(bookings.created_at, 'YYYY-MM') as period"),
-                'halls.name as hall_name',
-                DB::raw("COUNT(bookings.id) as total_bookings"),
-                DB::raw("SUM(CASE WHEN bookings.status != 'cancelled' THEN total_price ELSE 0 END) as total_sum"),
-                DB::raw("SUM(CASE WHEN bookings.status = 'confirmed' THEN total_price ELSE 0 END) as paid_sum"),
-                DB::raw("SUM(CASE WHEN bookings.status = 'cancelled' THEN total_price * 0.1 ELSE 0 END) as refund_penalty")
-            )
-            ->groupBy(DB::raw("period"), 'halls.name')
+        $manager = $request->user();
+        $tz = config('app.timezone');
+
+        $from = Carbon::parse($validated['date_from'], $tz)->startOfDay();
+        $to = Carbon::parse($validated['date_to'], $tz)->endOfDay();
+
+        $bookings = Booking::query()
+            ->with(['hall.businessPark', 'payments.refund'])
+            ->whereHas('hall', function ($q) use ($manager) {
+                $q->where('business_park_id', $manager->business_park_id);
+            })
+            ->where('status', 'completed')
+            ->whereBetween('start_datetime', [$from, $to])
+            ->orderBy('start_datetime')
             ->get();
 
-        $data = $report->map(function ($item) {
-            $netIncome = (float)$item->paid_sum - (float)$item->refund_penalty;
-            return [
-                'period' => $item->period,
-                'hall' => $item->hall_name,
-                'count' => (int)$item->total_bookings,
-                'total_sum' => number_format((float)$item->total_sum, 2, '.', ''),
-                'paid' => number_format((float)$item->paid_sum, 2, '.', ''),
-                'net_income' => number_format($netIncome, 2, '.', ''),
-                'average_check' => $item->total_bookings > 0 
-                    ? number_format($netIncome / $item->total_bookings, 2, '.', '') 
-                    : "0.00"
-            ];
-        });
+        $rows = $bookings
+            ->groupBy(function (Booking $b) use ($tz) {
+                $period = $b->start_datetime->timezone($tz)->format('Y-m');
+
+                return $period . '|' . $b->hall_id;
+            })
+            ->map(function ($group) use ($tz) {
+                /** @var \Illuminate\Support\Collection<int, Booking> $group */
+                $first = $group->first();
+                $hall = $first->hall;
+                $parkName = $hall?->businessPark?->name ?? '';
+
+                $count = $group->count();
+                $totalSum = (float) $group->sum('total_price');
+
+                $paidSum = 0.0;
+                $refundSum = 0.0;
+
+                foreach ($group as $booking) {
+                    foreach ($booking->payments as $payment) {
+                        if ($payment->payment_status === 'paid') {
+                            $paidSum += (float) $payment->amount;
+                        }
+                        $refund = $payment->refund;
+                        if ($refund && $refund->status === 'processed') {
+                            $refundSum += (float) $refund->amount;
+                        }
+                    }
+                }
+
+                if ($paidSum <= 0 && $totalSum > 0) {
+                    $paidSum = $totalSum;
+                }
+
+                $netIncome = $paidSum - $refundSum;
+                $paidPct = $totalSum > 0 ? round(($paidSum / $totalSum) * 100, 1) : 0.0;
+                $avgCheck = $count > 0 ? round($totalSum / $count, 2) : 0.0;
+
+                $period = $first->start_datetime->timezone($tz)->format('Y-m');
+
+                return [
+                    'period' => $period,
+                    'hall' => $hall->name ?? '',
+                    'business_park' => $parkName,
+                    'bookings_count' => $count,
+                    'total_bookings_amount' => round($totalSum, 2),
+                    'paid_amount' => round($paidSum, 2),
+                    'refunds_amount' => round($refundSum, 2),
+                    'net_income' => round($netIncome, 2),
+                    'paid_percentage' => $paidPct,
+                    'average_check' => $avgCheck,
+                ];
+            })
+            ->values()
+            ->sortBy(fn (array $row) => $row['period'] . "\0" . $row['hall'])
+            ->values();
 
         return response()->json([
             'report_id' => 'REP-INCOME-01',
-            'title' => 'Отчет по доходам за период',
-            'business_park' => $manager->business_park->name ?? 'Базовое значение парка (тест)',
+            'title' => 'Отчёт по завершённым бронированиям за период',
+            'business_park' => $manager->businessPark->name ?? '',
             'currency' => 'RUB',
-            'data' => $data
+            'data' => $rows,
         ]);
     }
 }

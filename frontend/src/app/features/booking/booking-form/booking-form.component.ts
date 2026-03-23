@@ -18,6 +18,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 
 import { HallsService } from '../../../core/services/halls.service';
 import { BookingsService } from '../../../core/services/bookings.service';
+import { BookingStateService } from '../../../core/services/booking-state.service';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Hall, Booking } from '../../../core/models';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
@@ -50,6 +51,7 @@ import { ErrorMessageComponent } from '../../../shared/components/error-message/
 export class BookingFormComponent implements OnInit {
   private readonly hallsService = inject(HallsService);
   private readonly bookingsService = inject(BookingsService);
+  private readonly bookingState = inject(BookingStateService);
   private readonly notificationService = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -180,9 +182,10 @@ export class BookingFormComponent implements OnInit {
       )
       .subscribe(booking => {
         if (booking) {
+          this.bookingState.onBookingCreated(this.hallId);
           this.notificationService.success('Бронирование успешно создано!');
           this.router.navigate(['/booking/success'], {
-            queryParams: { bookingId: booking.id }
+            queryParams: { bookingId: booking.id, hallId: this.hallId }
           });
         }
       });

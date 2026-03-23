@@ -8,10 +8,11 @@ export interface HallSearchParams {
   business_park_id?: string;
   capacity_from?: number;
   capacity_to?: number;
-  city?: string;
+  city?: string[];
   equipment_category?: string[];
   min_price?: number;
   max_price?: number;
+  date?: string;
   date_range_start?: string;
   date_range_end?: string;
 }
@@ -35,14 +36,19 @@ export class HallsService {
     if (params.capacity_to != null) {
       httpParams = httpParams.set('capacity_to', params.capacity_to);
     }
-    if (params.city) {
-      httpParams = httpParams.set('city', params.city);
+    if (params.city?.length) {
+      params.city.forEach((c: string) => {
+        httpParams = httpParams.append('city[]', c);
+      });
     }
     if (params.min_price != null) {
       httpParams = httpParams.set('min_price', params.min_price);
     }
     if (params.max_price != null) {
       httpParams = httpParams.set('max_price', params.max_price);
+    }
+    if (params.date) {
+      httpParams = httpParams.set('date', params.date);
     }
     if (params.date_range_start) {
       httpParams = httpParams.set('date_range[start]', params.date_range_start);
@@ -63,4 +69,21 @@ export class HallsService {
   getHall(id: string): Observable<Hall> {
     return this.http.get<Hall>(`/api/v1/halls/${id}`);
   }
+
+  getHallAvailability(hallId: string, from: string, days = 7): Observable<HallAvailabilityResponse> {
+    let params = new HttpParams()
+      .set('from', from)
+      .set('days', String(days))
+      .set('_', String(Date.now()));
+    return this.http.get<HallAvailabilityResponse>(`/api/v1/halls/${hallId}/availability`, { params });
+  }
+}
+
+export interface HallAvailabilityResponse {
+  hall_id: string;
+  from: string;
+  days: number;
+  time_slots: { start: string; end: string; label: string }[];
+  /** По каждому дню — массив в том же порядке, что time_slots; true = свободно */
+  availability: Record<string, boolean[]>;
 }

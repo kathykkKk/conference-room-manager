@@ -37,6 +37,12 @@
         </div>
 
         <div class="actions">
+          @if (hallId) {
+            <a mat-raised-button color="primary" [routerLink]="['/halls', hallId]" [queryParams]="{ refresh: 1 }">
+              <mat-icon>meeting_room</mat-icon>
+              Вернуться к залу
+            </a>
+          }
           <a mat-raised-button color="primary" routerLink="/">
             <mat-icon>search</mat-icon>
             Найти другой зал

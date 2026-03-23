@@ -108,6 +108,21 @@
           </mat-card>
 
           <!-- Оборудование -->
+          <!-- Таблица доступности -->
+          <mat-card class="availability-card">
+            <mat-card-header>
+              <mat-card-title>
+                <mat-icon>calendar_month</mat-icon>
+                Когда свободен зал
+              </mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+              <app-hall-availability-table [hallId]="hall.id"
+                             [refreshTrigger]="refreshAvailabilityTrigger"
+                             (slotSelected)="onSlotSelectedFromTable($event)"></app-hall-availability-table>
+            </mat-card-content>
+          </mat-card>
+
           @if (hall.equipment && hall.equipment.length > 0) {
             <mat-card class="equipment-card">
               <mat-card-header>
@@ -138,7 +153,8 @@
           }
         </div>
 
-        <!-- Правая колонка: форма бронирования -->
+        <!-- Правая колонка: форма бронирования (только если зал доступен для бронирования) -->
+        @if (isBookable) {
         <div class="hall-sidebar">
           <mat-card class="booking-card" [class.sticky-card]="true">
             <mat-card-header>
@@ -173,7 +189,7 @@
                   <mat-label>Начало</mat-label>
                   <mat-select formControlName="start_time">
                     <mat-option value="">Выберите время</mat-option>
-                    @for (time of timeOptions; track time) {
+                    @for (time of timeOptionsStart; track time) {
                       <mat-option [value]="time">{{ time }}</mat-option>
                     }
                   </mat-select>
@@ -186,7 +202,7 @@
                   <mat-label>Конец</mat-label>
                   <mat-select formControlName="end_time">
                     <mat-option value="">Выберите время</mat-option>
-                    @for (time of timeOptions; track time) {
+                    @for (time of timeOptionsEnd; track time) {
                       <mat-option [value]="time">{{ time }}</mat-option>
                     }
                   </mat-select>
@@ -206,19 +222,25 @@
                 }
 
                 <button mat-raised-button color="primary" type="submit"
-                        class="book-button"
-                        [disabled]="hall.status === 'unavailable'">
+                        class="book-button">
                   <mat-icon>event_available</mat-icon>
-                  @if (hall.status === 'unavailable') {
-                    Зал недоступен
-                  } @else {
-                    Перейти к бронированию
-                  }
+                  Перейти к бронированию
                 </button>
               </form>
             </mat-card-content>
           </mat-card>
         </div>
+        } @else {
+        <div class="hall-sidebar">
+          <mat-card class="booking-card unavailable-notice">
+            <mat-card-content>
+              <mat-icon>block</mat-icon>
+              <p>Зал временно недоступен для бронирования.</p>
+              <p class="hint">Все слоты на ближайшие 4 недели заняты.</p>
+            </mat-card-content>
+          </mat-card>
+        </div>
+        }
       </div>
     </div>
   </div>

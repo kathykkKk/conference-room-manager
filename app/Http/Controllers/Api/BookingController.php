@@ -24,8 +24,14 @@ class BookingController extends Controller
             'client_phone' => 'required|string|max:30',
         ]);
 
-        $start = Carbon::parse($validated['start_datetime']);
-        $end = Carbon::parse($validated['end_datetime']);
+        $start = Carbon::parse($validated['start_datetime'])->utc();
+        $end = Carbon::parse($validated['end_datetime'])->utc();
+
+        if (Hall::intervalOverlapsMorningPolicyWindow($start, $end)) {
+            return response()->json([
+                'message' => 'В текущие сутки до 13:00 бронирование недоступно. Выберите время с 13:00.',
+            ], 422);
+        }
 
         // 2. Используем транзакцию для атомарности (ТЗ 6.1, Ц-03)
         return DB::transaction(function () use ($validated, $start, $end) {
@@ -35,15 +41,10 @@ class BookingController extends Controller
 
             // 4. Проверка на овербукинг (ТЗ Ц-01)
             $exists = Booking::where('hall_id', $hall->id)
-                ->whereIn('status', ['confirmed', 'pending'])
-                ->where(function ($query) use ($start, $end) {
-                    $query->whereBetween('start_datetime', [$start, $end])
-                          ->orWhereBetween('end_datetime', [$start, $end])
-                          ->orWhere(function ($q) use ($start, $end) {
-                              $q->where('start_datetime', '<=', $start)
-                                ->where('end_datetime', '>=', $end);
-                          });
-                })->exists();
+                ->whereIn('status', ['confirmed', 'pending', 'completed'])
+                ->where('start_datetime', '<', $end)
+                ->where('end_datetime', '>', $start)
+                ->exists();
 
             if ($exists) {
                 return response()->json(['message' => 'Этот временной слот уже занят'], 422);

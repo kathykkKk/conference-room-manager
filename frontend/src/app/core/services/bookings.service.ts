@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 import { Booking } from '../models';
 
 export interface CreateBookingRequest {
@@ -19,6 +20,8 @@ export class BookingsService {
   constructor(private http: HttpClient) {}
 
   createBooking(data: CreateBookingRequest): Observable<Booking> {
-    return this.http.post<Booking>('/api/v1/bookings', data);
+    return this.http
+      .post<{ booking: Booking }>('/api/v1/bookings', data)
+      .pipe(map(res => res.booking));
   }
 }

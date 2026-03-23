@@ -1,0 +1,107 @@
+.availability-block {
+  margin-top: 24px;
+}
+
+.availability-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 16px;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+  }
+}
+
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  .week-range {
+    font-size: 14px;
+    color: #616161;
+  }
+}
+
+.availability-table-wrap {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.availability-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+
+  th, td {
+    padding: 8px 10px;
+    text-align: center;
+    border: 1px solid #e0e0e0;
+  }
+
+  th {
+    background: #f5f5f5;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .slot-col {
+    text-align: left;
+    min-width: 90px;
+    white-space: nowrap;
+  }
+
+  td.free {
+    background: #c8e6c9;
+    min-width: 32px;
+  }
+
+  td.free.clickable {
+    cursor: pointer;
+
+    &:hover {
+      background: #a5d6a7;
+    }
+  }
+
+  td.occupied {
+    background: #ffcdd2;
+    min-width: 32px;
+    cursor: default;
+  }
+}
+
+.legend {
+  display: flex;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 12px;
+  color: #757575;
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    &::before {
+      content: '';
+      width: 16px;
+      height: 16px;
+      border-radius: 2px;
+    }
+
+    &.free::before {
+      background: #c8e6c9;
+    }
+
+    &.occupied::before {
+      background: #ffcdd2;
+    }
+  }
+}
