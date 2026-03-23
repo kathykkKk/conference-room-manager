@@ -16,6 +16,7 @@ import { MatTableModule } from '@angular/material/table';
 import { MatDividerModule } from '@angular/material/divider';
 
 import { ManagerService, IncomeReportRow } from '../../../core/services/manager.service';
+import { formatLocalDateOnly } from '../../../core/utils/datetime.util';
 import { NotificationService } from '../../../core/services/notification.service';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { ErrorMessageComponent } from '../../../shared/components/error-message/error-message.component';
@@ -100,11 +101,9 @@ export class ManagerReportsComponent {
     this.isLoading = true;
     this.error = null;
 
-    const formatDate = (d: Date): string => d.toISOString().split('T')[0];
-
     this.managerService.getIncomeReport({
-      date_from: formatDate(startDate),
-      date_to: formatDate(endDate)
+      date_from: formatLocalDateOnly(startDate),
+      date_to: formatLocalDateOnly(endDate)
     })
       .pipe(
         takeUntilDestroyed(this.destroyRef),

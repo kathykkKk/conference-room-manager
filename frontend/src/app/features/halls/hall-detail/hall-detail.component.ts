@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, DestroyRef } from '@angular/core';
-import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
+import { CommonModule, CurrencyPipe } from '@angular/common';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -19,10 +19,12 @@ import { MatTableModule } from '@angular/material/table';
 import { MatChipsModule } from '@angular/material/chips';
 
 import { HallsService } from '../../../core/services/halls.service';
+import { formatUtcDatetimeFromCalendarDateAndTime } from '../../../core/utils/datetime.util';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Hall } from '../../../core/models';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
 import { ErrorMessageComponent } from '../../../shared/components/error-message/error-message.component';
+import { HallAvailabilityTableComponent } from '../hall-availability-table/hall-availability-table.component';
 
 @Component({
   selector: 'app-hall-detail',
@@ -32,7 +34,6 @@ import { ErrorMessageComponent } from '../../../shared/components/error-message/
     ReactiveFormsModule,
     RouterLink,
     CurrencyPipe,
-    DatePipe,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -45,7 +46,8 @@ import { ErrorMessageComponent } from '../../../shared/components/error-message/
     MatTableModule,
     MatChipsModule,
     LoadingSpinnerComponent,
-    ErrorMessageComponent
+    ErrorMessageComponent,
+    HallAvailabilityTableComponent
   ],
   templateUrl: './hall-detail.component.html',
   styleUrls: ['./hall-detail.component.scss']
@@ -67,10 +69,15 @@ export class HallDetailComponent implements OnInit {
   calculatedPrice: number | null = null;
   minDate = new Date();
 
-  readonly timeOptions = [
+  readonly timeOptionsStart = [
     '08:00', '09:00', '10:00', '11:00', '12:00', '13:00',
     '14:00', '15:00', '16:00', '17:00', '18:00', '19:00',
     '20:00', '21:00', '22:00'
+  ];
+  readonly timeOptionsEnd = [
+    '09:00', '10:00', '11:00', '12:00', '13:00', '14:00',
+    '15:00', '16:00', '17:00', '18:00', '19:00', '20:00',
+    '21:00', '22:00', '23:00'
   ];
 
   bookingForm: FormGroup = this.fb.group({
@@ -81,7 +88,17 @@ export class HallDetailComponent implements OnInit {
 
   readonly equipmentColumns = ['name', 'category', 'quantity'];
 
+  refreshAvailabilityTrigger: number | null = null;
+
   ngOnInit(): void {
+    this.route.queryParams
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe(q => {
+        if (q['refresh']) {
+          this.refreshAvailabilityTrigger = Date.now();
+        }
+      });
+
     this.route.params
       .pipe(
         takeUntilDestroyed(this.destroyRef),
@@ -115,24 +132,25 @@ export class HallDetailComponent implements OnInit {
       return;
     }
 
-    const startDate = new Date(date);
+    const cal = new Date(date);
     const [startH, startM] = start_time.split(':');
-    startDate.setHours(Number(startH), Number(startM), 0, 0);
-
-    const endDate = new Date(date);
     const [endH, endM] = end_time.split(':');
-    endDate.setHours(Number(endH), Number(endM), 0, 0);
+    const y = cal.getFullYear();
+    const mo = cal.getMonth();
+    const d = cal.getDate();
+    const startMs = Date.UTC(y, mo, d, Number(startH), Number(startM), 0, 0);
+    const endMs = Date.UTC(y, mo, d, Number(endH), Number(endM), 0, 0);
 
-    if (endDate <= startDate) {
+    if (endMs <= startMs) {
       this.calculatedPrice = null;
       return;
     }
 
-    const hours = (endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60);
+    const hours = (endMs - startMs) / (1000 * 60 * 60);
     this.calculatedPrice = hours * Number(priceRaw);
 
-    this.selectedStartDatetime = startDate.toISOString();
-    this.selectedEndDatetime = endDate.toISOString();
+    this.selectedStartDatetime = formatUtcDatetimeFromCalendarDateAndTime(cal, start_time);
+    this.selectedEndDatetime = formatUtcDatetimeFromCalendarDateAndTime(cal, end_time);
   }
 
   onBook(): void {
@@ -179,5 +197,18 @@ export class HallDetailComponent implements OnInit {
 
   getStatusLabel(status: string): string {
     return status === 'available' ? 'Доступен' : 'Недоступен';
+  }
+
+  get isBookable(): boolean {
+    return this.hall?.is_bookable !== false && this.hall?.status !== 'unavailable';
+  }
+
+  onSlotSelectedFromTable(event: { date: string; startTime: string; endTime: string }): void {
+    if (!this.isBookable) return;
+    this.bookingForm.patchValue({
+      date: new Date(event.date + 'T12:00:00'),
+      start_time: event.startTime,
+      end_time: event.endTime
+    });
   }
 }

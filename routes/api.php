@@ -18,6 +18,8 @@ Route::prefix('v1')->group(function () {
     // Поиск залов с фильтрацией
     Route::get('/halls', [HallController::class, 'index']);
     
+    // Матрица доступности зала (дни × слоты) — более специфичный маршрут первым
+    Route::get('/halls/{hall}/availability', [HallController::class, 'availability']);
     // Детальная карточка зала
     Route::get('/halls/{hall}', [HallController::class, 'show']);
 

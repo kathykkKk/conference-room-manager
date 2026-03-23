@@ -12,7 +12,7 @@
       <div class="form-row">
         <mat-form-field appearance="outline" class="form-field">
           <mat-label>Дата</mat-label>
-          <input matInput [matDatepicker]="datePicker" formControlName="date" placeholder="дд.мм.гггг">
+          <input matInput [matDatepicker]="datePicker" formControlName="date" placeholder="дд.мм.гггг" [min]="minDate">
           <mat-datepicker-toggle matIconSuffix [for]="datePicker"></mat-datepicker-toggle>
           <mat-datepicker #datePicker></mat-datepicker>
         </mat-form-field>
@@ -47,9 +47,13 @@
           </mat-select>
         </mat-form-field>
 
-        <mat-form-field appearance="outline" class="form-field">
+        <mat-form-field appearance="outline" class="form-field form-field-lg">
           <mat-label>Город</mat-label>
-          <input matInput formControlName="city" placeholder="Москва">
+          <mat-select formControlName="city" multiple>
+            @for (city of filtersData?.cities; track city) {
+              <mat-option [value]="city">{{ city }}</mat-option>
+            }
+          </mat-select>
           <mat-icon matSuffix>location_city</mat-icon>
         </mat-form-field>
       </div>
