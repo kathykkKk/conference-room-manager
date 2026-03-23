@@ -15,9 +15,22 @@ class EquipmentFactory extends Factory
      * @return array<string, mixed>
      */
     public function definition(): array {
+        $items = [
+            ['Проектор', 'Видео'],
+            ['Флипчарт', 'Мебель'],
+            ['Кофе-машина', 'Сервис'],
+            ['Микрофон', 'Аудио'],
+            ['Колонки', 'Аудио'],
+            ['Экран', 'Видео'],
+            ['Доска маркерная', 'Мебель'],
+            ['Видеокамера', 'Видео'],
+            ['Принтер', 'Офис'],
+            ['Кондиционер', 'Климат'],
+        ];
+        $item = fake()->randomElement($items);
         return [
-            'name' => fake()->randomElement(['Проектор', 'Флипчарт', 'Кофе-машина', 'Микрофон']),
-            'category' => fake()->randomElement(['Аудио', 'Видео', 'Мебель', 'Сервис']),
+            'name' => $item[0],
+            'category' => $item[1],
         ];
     }
 }

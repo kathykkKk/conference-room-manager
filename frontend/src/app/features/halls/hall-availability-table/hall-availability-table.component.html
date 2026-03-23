@@ -1,0 +1,50 @@
+<div class="availability-block">
+  <div class="availability-header">
+    <h3>Расписание доступности</h3>
+    <div class="week-nav">
+      <button mat-button type="button" (click)="prevWeek()" [disabled]="!canGoPrev()">
+        ← Назад
+      </button>
+      <span class="week-range">Неделя от {{ fromDate | date:'dd.MM.yyyy':'':'ru-RU' }}</span>
+      <button mat-button type="button" (click)="nextWeek()">
+        Вперёд →
+      </button>
+    </div>
+  </div>
+
+  @if (isLoading) {
+    <app-loading-spinner></app-loading-spinner>
+  } @else if (data) {
+    <div class="availability-table-wrap">
+      <table class="availability-table">
+        <thead>
+          <tr>
+            <th class="slot-col">Время</th>
+            @for (day of dayLabels; track day.date) {
+              <th>{{ day.label }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (slot of data.time_slots; track slot.start; let slotIndex = $index) {
+            <tr>
+              <td class="slot-col">{{ slot.label }}</td>
+              @for (day of dayLabels; track day.date) {
+                <td [class.free]="isSlotFree(day.date, slotIndex)"
+                    [class.occupied]="!isSlotFree(day.date, slotIndex)"
+                    [class.clickable]="isSlotFree(day.date, slotIndex)"
+                    [title]="isSlotFree(day.date, slotIndex) ? 'Нажмите для бронирования' : 'Занято'"
+                    (click)="onSlotClick(day.date, slotIndex)">
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <div class="legend">
+      <span class="legend-item free">Свободно</span>
+      <span class="legend-item occupied">Занято</span>
+    </div>
+  }
+</div>

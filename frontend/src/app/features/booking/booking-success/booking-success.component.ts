@@ -1,5 +1,5 @@
 import { Component, OnInit, inject, DestroyRef } from '@angular/core';
-import { CommonModule, DatePipe, CurrencyPipe } from '@angular/common';
+import { CommonModule } from '@angular/common';
 // DatePipe and CurrencyPipe used in template via async pipe and date formatting
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -15,8 +15,6 @@ import { MatDividerModule } from '@angular/material/divider';
   imports: [
     CommonModule,
     RouterLink,
-    DatePipe,
-    CurrencyPipe,
     MatCardModule,
     MatButtonModule,
     MatIconModule,
@@ -29,13 +27,15 @@ export class BookingSuccessComponent implements OnInit {
   private readonly route = inject(ActivatedRoute);
   private readonly destroyRef = inject(DestroyRef);
 
-  bookingId: string = '';
+  bookingId = '';
+  hallId = '';
 
   ngOnInit(): void {
     this.route.queryParams
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe(params => {
         this.bookingId = params['bookingId'] || '';
+        this.hallId = params['hallId'] || '';
       });
   }
 }

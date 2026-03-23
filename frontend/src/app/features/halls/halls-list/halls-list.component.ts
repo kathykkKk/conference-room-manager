@@ -19,6 +19,7 @@ import { MatDividerModule } from '@angular/material/divider';
 import { MatExpansionModule } from '@angular/material/expansion';
 
 import { HallsService, HallSearchParams } from '../../../core/services/halls.service';
+import { formatUtcDatetimeFromCalendarDateAndTime, formatLocalDateOnly } from '../../../core/utils/datetime.util';
 import { NotificationService } from '../../../core/services/notification.service';
 import { Hall, BusinessPark, Equipment, HallFiltersData } from '../../../core/models';
 import { LoadingSpinnerComponent } from '../../../shared/components/loading-spinner/loading-spinner.component';
@@ -61,18 +62,35 @@ export class HallsListComponent implements OnInit {
   isFiltersLoading = false;
   error: string | null = null;
 
-  readonly timeOptions = [
+  readonly timeOptionsAll = [
     '08:00', '09:00', '10:00', '11:00', '12:00', '13:00',
     '14:00', '15:00', '16:00', '17:00', '18:00', '19:00',
     '20:00', '21:00', '22:00'
   ];
+
+  get timeOptions(): string[] {
+    const date = this.searchForm?.get('date')?.value;
+    if (!date) return this.timeOptionsAll;
+    const selected = new Date(date);
+    const today = new Date();
+    if (selected.toDateString() !== today.toDateString()) return this.timeOptionsAll;
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    return this.timeOptionsAll.filter(t => {
+      const [h] = t.split(':').map(Number);
+      return h > currentHour || (h === currentHour && currentMinute < 30);
+    });
+  }
+
+  minDate = new Date();
 
   searchForm: FormGroup = this.fb.group({
     date: [null],
     start_time: [''],
     end_time: [''],
     business_park_id: [''],
-    city: [''],
+    city: [[]],
     capacity_from: [null],
     capacity_to: [null],
     min_price: [null],
@@ -125,7 +143,7 @@ export class HallsListComponent implements OnInit {
     if (formValue.business_park_id) {
       params.business_park_id = formValue.business_park_id;
     }
-    if (formValue.city) {
+    if (formValue.city?.length) {
       params.city = formValue.city;
     }
     if (formValue.capacity_from != null && formValue.capacity_from !== '') {
@@ -144,24 +162,22 @@ export class HallsListComponent implements OnInit {
       params.equipment_category = formValue.equipment;
     }
 
-    if (formValue.date && formValue.start_time) {
-      const date = new Date(formValue.date);
-      const [hours, minutes] = formValue.start_time.split(':');
-      date.setHours(Number(hours), Number(minutes), 0, 0);
-      params.date_range_start = date.toISOString();
-    }
-    if (formValue.date && formValue.end_time) {
-      const date = new Date(formValue.date);
-      const [hours, minutes] = formValue.end_time.split(':');
-      date.setHours(Number(hours), Number(minutes), 0, 0);
-      params.date_range_end = date.toISOString();
+    if (formValue.date) {
+      const dateStr = formatLocalDateOnly(new Date(formValue.date));
+      if (formValue.start_time && formValue.end_time) {
+        const cal = new Date(formValue.date);
+        params.date_range_start = formatUtcDatetimeFromCalendarDateAndTime(cal, formValue.start_time);
+        params.date_range_end = formatUtcDatetimeFromCalendarDateAndTime(cal, formValue.end_time);
+      } else {
+        params.date = dateStr;
+      }
     }
 
     this.loadHalls(params);
   }
 
   onReset(): void {
-    this.searchForm.reset({ equipment: [] });
+    this.searchForm.reset({ equipment: [], city: [] });
     this.loadHalls({});
   }
 

@@ -56,6 +56,8 @@ export interface Hall {
   pricing_rules?: PricingRule[];
   price_per_hour?: number;
   current_price?: number;
+  has_free_slots_4weeks?: boolean;
+  is_bookable?: boolean;
 }
 
 export interface Client {
@@ -93,4 +95,5 @@ export interface HallFiltersData {
   equipment?: Equipment[];
   equipment_categories?: string[];
   cities?: string[];
+  capacity_ranges?: { label: string; min: number; max: number }[];
 }
